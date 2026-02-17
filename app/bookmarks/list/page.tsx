@@ -1,7 +1,7 @@
 "use client";
 import { supabase } from "@/lib/supabaseClient";
 import { sign } from "crypto";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 
 function BookmarksList() {
@@ -61,6 +61,19 @@ function BookmarksList() {
                 console.log("Subscription: ", status);
             });
         }, []);
+
+    useEffect(() => {
+        const channel = supabase.channel("bookmarks-channel");
+        channel.on(
+            "postgres_changes",
+            { event: "DELETE", schema: "public", table: "BookMarks" },
+            (payload) => {            const deletedBookmark = payload.old as any;
+            setBookmarks((prev) => prev.filter((bookmark) => bookmark.id !== deletedBookmark.id));
+            }
+        ).subscribe((status) => {
+            console.log("Subscription: ", status);
+        });
+    }, []);
     return (
         <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md gap-x-8">
             {session ?
