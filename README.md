@@ -1,36 +1,136 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ==========================================
+# 🔖 Bookmark Manager (Next.js + Supabase)
+# ==========================================
 
-## Getting Started
+# Description:
+# A full-stack bookmark manager built with:
+# - Next.js (App Router)
+# - Supabase (Auth + PostgreSQL)
+# - Google OAuth
+# - Row Level Security (RLS)
 
-First, run the development server:
+# ==========================================
+# 🚀 PROJECT SETUP
+# ==========================================
 
+# 1️⃣ Clone Repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/Mohammad-Ikhlas-khan/bookmarks.git
+cd my-app
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+# 2️⃣ Install Dependencies
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# 3️⃣ Create .env file
+```bash
+touch .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Add the following inside .env.local:
 
-## Learn More
+NEXT_PUBLIC_SUPABASE_URL=your_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 
-To learn more about Next.js, take a look at the following resources:
+# Restart server after adding env
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# ==========================================
+# 🗄️ DATABASE SETUP (Supabase SQL Editor)
+# ==========================================
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Create 2 Tables
+1.users with columns id,created_at and email
+2.BookMarks with columns id,created_at,url,title and user_id(Foreign key)
 
-## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Enable Row Level Security
+alter table "BookMarks" enable row level security;
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# INSERT Policy
+create policy "Enable insert for users based on user_id"
+on "public"."BookMarks"
+as permissive
+for insert
+to authenticated
+with check (
+  auth.uid() = user_id
+);
+
+# SELECT Policy
+create policy "Enable select for users based on user_id"
+on "public"."BookMarks"
+as permissive
+for select
+to authenticated
+using (
+  auth.uid() = user_id
+);
+
+# ==========================================
+# 🔐 GOOGLE AUTH SETUP
+# ==========================================
+
+# In Supabase Dashboard:
+# Authentication → Providers → Google → Enable
+
+# Add Redirect URL:
+http://localhost:3000/auth/callback
+
+# ==========================================
+# 🌐 RUN APPLICATION
+# ==========================================
+
+npm run dev
+# Visit: http://localhost:3000
+
+# ==========================================
+# ⚠️ PROBLEMS I FACED & SOLUTIONS
+# ==========================================
+
+# ❌ 1. 404 After Google Login
+# Cause: Missing /auth/callback route in App Router
+# Fix: Created app/auth/callback/page.tsx
+
+# ❌ 2. User Logged In But No Insert
+# Cause: RLS blocking insert
+# Fix: Added INSERT policy with:
+# with check (auth.uid() = user_id)
+
+
+# ❌ 3. 403 Forbidden Error
+# Cause: Missing SELECT policy
+# Fix: Added SELECT policy
+
+# ❌ 4. UI Session Loading Lazily
+# Cause: getSession() is async
+# Fix: Added loading state before rendering UI
+
+# ❌ 5. Invalid URLs Being Inserted
+# Fix: Added CHECK constraint
+
+ALTER TABLE "BookMarks"
+ADD CONSTRAINT valid_url_check
+CHECK (
+  url ~* '^https:\/\/([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(/[^\s]*)?$'
+);
+
+# ==========================================
+# 📚 LEARNINGS
+# ==========================================
+
+# - Supabase RLS deep understanding
+# - Auth + Session handling in App Router
+# - PostgreSQL case sensitivity
+# - Secure per-user data isolation
+# - SQL CHECK constraints
+
+# ==========================================
+# 👨‍💻 Author
+# ==========================================
+
+# Mohammad Ikhlas Khan
