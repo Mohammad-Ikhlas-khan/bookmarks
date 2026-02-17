@@ -66,13 +66,15 @@ function BookmarksList() {
         const channel = supabase.channel("bookmarks-channel");
         channel.on(
             "postgres_changes",
-            { event: "DELETE", schema: "public", table: "BookMarks" },
+            { event: "DELETE", schema: "public", table: "BookMarks" , filter: `user_id=eq.${session?.user.id}`},
             (payload) => {            const deletedBookmark = payload.old as any;
             setBookmarks((prev) => prev.filter((bookmark) => bookmark.id !== deletedBookmark.id));
             }
-        ).subscribe((status) => {
-            console.log("Subscription: ", status);
-        });
+        ).subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
     return (
         <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md gap-x-8">
